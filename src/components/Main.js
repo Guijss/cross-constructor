@@ -23,21 +23,26 @@ export const ThemeContext = createContext();
 const themeDark = {
   bgCol: 'rgb(17, 17, 21)',
   cellCol: 'rgb(28, 29, 35)',
-  cellBorderCol: 'rgb(150, 150, 150)',
+  selectedCellCol: 'rgb(51, 52, 58)',
+  cellBorderCol: 'rgb(100, 100, 100)',
   textCol: 'rgb(150, 150, 150)',
 };
 
 const themeLight = {
   bgCol: 'rgb(255, 255, 255)',
   cellCol: 'rgb(230, 230, 230)',
+  selectedCellCol: 'rgb(180, 181, 189)',
   cellBorderCol: 'rgb(0, 0, 0)',
   textCol: 'rgb(0, 0, 0)',
 };
+
+const blankGrid = Array.from(Array(15), () => Array(15).fill(''));
 
 const Main = () => {
   const [theme, setTheme] = useState({});
   const [isThemeDark, setIsThemeDark] = useState(true);
   const [symmetry, setSymmetry] = useState(0); //0 - rotational, 1 - mirrored, 2 - none
+  const [grid, setGrid] = useState(blankGrid);
 
   useEffect(() => {
     setTheme(() => (isThemeDark ? themeDark : themeLight));
@@ -52,7 +57,7 @@ const Main = () => {
       <MainWrapper style={{ backgroundColor: theme.bgCol }}>
         <ThemeSwitch handleClick={handleThemeClick} isThemeDark={isThemeDark} />
         <Settings symmetry={symmetry} setSymmetry={setSymmetry} />
-        <Grid />
+        <Grid grid={grid} setGrid={setGrid} />
         <Clues />
       </MainWrapper>
     </ThemeContext.Provider>
