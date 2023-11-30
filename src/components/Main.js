@@ -55,7 +55,53 @@ const Main = () => {
     setTheme(() => (isThemeDark ? themeDark : themeLight));
   }, [isThemeDark]);
 
-  useEffect(() => {}, [blockedCells]);
+  useEffect(() => {
+    let clueCount = 1;
+    let cluesArr = [];
+    for (let j = 0; j < blockedCells[0].length; j++) {
+      for (let i = 0; i < blockedCells.length; i++) {
+        let wasClueAdded = false;
+        if (blockedCells[i][j] !== true) {
+          if (i === 0 || (i > 0 && blockedCells[i - 1][j] === true)) {
+            let wordCells = [];
+            for (let wordI = i; wordI <= 14; wordI++) {
+              if (blockedCells[wordI][j] === true) {
+                break;
+              }
+              wordCells.push(gridRefs.current[wordI][j]);
+            }
+            cluesArr.push({
+              direction: 'across',
+              count: clueCount,
+              cells: wordCells,
+              pos: { i: i, j: j },
+            });
+            wasClueAdded = true;
+          }
+          if (j === 0 || (j > 0 && blockedCells[i][j - 1] === true)) {
+            let wordCells = [];
+            for (let wordJ = j; wordJ <= 14; wordJ++) {
+              if (blockedCells[i][wordJ] === true) {
+                break;
+              }
+              wordCells.push(gridRefs.current[i][wordJ]);
+            }
+            cluesArr.push({
+              direction: 'across',
+              count: clueCount,
+              cells: wordCells,
+              pos: { i: i, j: j },
+            });
+            wasClueAdded = true;
+          }
+        }
+        if (wasClueAdded) {
+          clueCount++;
+        }
+      }
+    }
+    setClues(cluesArr);
+  }, [blockedCells]);
 
   const handleThemeClick = () => {
     setIsThemeDark((prev) => !prev);
@@ -71,6 +117,7 @@ const Main = () => {
           setGrid={setGrid}
           blockedCells={blockedCells}
           setBlockedCells={setBlockedCells}
+          clues={clues}
           gridRefs={gridRefs}
           symmetry={symmetry}
         />

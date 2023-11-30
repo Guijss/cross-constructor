@@ -18,11 +18,19 @@ const CellContent = styled.span`
   font-size: 2rem;
 `;
 
+const ClueNum = styled.span`
+  position: absolute;
+  font-size: 0.8rem;
+  top: 0;
+  left: 0;
+`;
+
 const Cell = ({
   pos,
   handleClick,
   isSelected,
   isBlocked,
+  clueNum,
   gridRefs,
   children,
 }) => {
@@ -42,6 +50,7 @@ const Cell = ({
       ref={(e) => (gridRefs.current[pos.i][pos.j] = e)}
     >
       <CellContent>{isBlocked ? null : children}</CellContent>
+      {clueNum !== null ? <ClueNum>{clueNum}</ClueNum> : null}
     </CellWrapper>
   );
 };

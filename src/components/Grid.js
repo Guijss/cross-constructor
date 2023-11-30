@@ -24,6 +24,7 @@ const Grid = ({
   setGrid,
   blockedCells,
   setBlockedCells,
+  clues,
   gridRefs,
   symmetry,
 }) => {
@@ -39,7 +40,7 @@ const Grid = ({
         return;
       }
       setGrid((prev) => {
-        const newGrid = [...prev];
+        let newGrid = [...prev];
         newGrid[selectedCell.i][selectedCell.j] = key.toUpperCase();
         return newGrid;
       });
@@ -55,7 +56,7 @@ const Grid = ({
     if (e.ctrlKey) {
       if (blockedCells[i][j]) {
         setBlockedCells((prev) => {
-          const newBlockedCells = [...prev];
+          let newBlockedCells = [...prev];
           newBlockedCells[i][j] = false;
           switch (symmetry) {
             case 0:
@@ -87,7 +88,6 @@ const Grid = ({
           return newBlockedCells;
         });
       }
-
       return;
     }
     if (grid[i][j] === '#') {
@@ -102,6 +102,10 @@ const Grid = ({
       <GridBoard>
         {grid.map((row, i) => {
           return row.map((el, j) => {
+            const clueArr = clues.filter(
+              (obj) => obj.pos.i === i && obj.pos.j === j
+            );
+            const clueNum = clueArr.length > 0 ? clueArr[0].count : null;
             return (
               <Cell
                 key={`${i}${j}`}
@@ -111,6 +115,7 @@ const Grid = ({
                   selectedCell.i === i && selectedCell.j === j ? true : false
                 }
                 isBlocked={blockedCells[i][j]}
+                clueNum={clueNum}
                 gridRefs={gridRefs}
               >
                 {el}
