@@ -18,18 +18,30 @@ const CellContent = styled.span`
   font-size: 2rem;
 `;
 
-const Cell = ({ pos, handleClick, selected, children }) => {
+const Cell = ({
+  pos,
+  handleClick,
+  isSelected,
+  isBlocked,
+  gridRefs,
+  children,
+}) => {
   const theme = useContext(ThemeContext);
   return (
     <CellWrapper
       style={{
-        backgroundColor: selected ? theme.selectedCellCol : theme.cellCol,
+        backgroundColor: isBlocked
+          ? theme.textCol
+          : isSelected
+          ? theme.selectedCellCol
+          : theme.cellCol,
         border: `1px solid ${theme.cellBorderCol}`,
         color: theme.textCol,
       }}
-      onClick={(e) => handleClick(pos.i, pos.j)}
+      onClick={(e) => handleClick(e, pos.i, pos.j)}
+      ref={(e) => (gridRefs.current[pos.i][pos.j] = e)}
     >
-      <CellContent>{children}</CellContent>
+      <CellContent>{isBlocked ? null : children}</CellContent>
     </CellWrapper>
   );
 };

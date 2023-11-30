@@ -57,38 +57,44 @@ const Settings = ({ symmetry, setSymmetry }) => {
         <SymmetryTitle style={{ color: theme.textCol }}>Symmetry</SymmetryTitle>
         <SymmetryItem onClick={() => handleClick(0)}>
           <ItemTitle
-            style={{ color: symmetry === 0 ? theme.textCol : theme.cellCol }}
+            style={{
+              color: symmetry === 0 ? theme.textCol : theme.unselectedCol,
+            }}
           >
             Rotational
           </ItemTitle>
           <GiClockwiseRotation
             style={{ transition: 'all 0.3s ease' }}
             size={40}
-            color={symmetry === 0 ? theme.textCol : theme.cellCol}
+            color={symmetry === 0 ? theme.textCol : theme.unselectedCol}
           />
         </SymmetryItem>
         <SymmetryItem onClick={() => handleClick(1)}>
           <ItemTitle
-            style={{ color: symmetry === 1 ? theme.textCol : theme.cellCol }}
+            style={{
+              color: symmetry === 1 ? theme.textCol : theme.unselectedCol,
+            }}
           >
             Mirrored
           </ItemTitle>
           <FaArrowRightArrowLeft
             style={{ transition: 'all 0.3s ease' }}
             size={40}
-            color={symmetry === 1 ? theme.textCol : theme.cellCol}
+            color={symmetry === 1 ? theme.textCol : theme.unselectedCol}
           />
         </SymmetryItem>
         <SymmetryItem onClick={() => handleClick(2)}>
           <ItemTitle
-            style={{ color: symmetry === 2 ? theme.textCol : theme.cellCol }}
+            style={{
+              color: symmetry === 2 ? theme.textCol : theme.unselectedCol,
+            }}
           >
             None
           </ItemTitle>
           <RiProhibitedLine
             style={{ transition: 'all 0.3s ease' }}
             size={40}
-            color={symmetry === 2 ? theme.textCol : theme.cellCol}
+            color={symmetry === 2 ? theme.textCol : theme.unselectedCol}
           />
         </SymmetryItem>
       </Symmetry>

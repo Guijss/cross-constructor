@@ -15,10 +15,18 @@ const GridBoard = styled.div`
   position: relative;
   display: grid;
   grid-gap: 0;
-  grid-template-columns: repeat(15, auto);
+  grid-template-rows: repeat(15, auto);
+  grid-auto-flow: column;
 `;
 
-const Grid = ({ grid, setGrid }) => {
+const Grid = ({
+  grid,
+  setGrid,
+  blockedCells,
+  setBlockedCells,
+  gridRefs,
+  symmetry,
+}) => {
   const [selectedCell, setSelectedCell] = useState({ i: 0, j: 0 });
 
   useEffect(() => {
@@ -43,8 +51,50 @@ const Grid = ({ grid, setGrid }) => {
     };
   }, [selectedCell, setGrid]);
 
-  const handleClick = (i, j) => {
+  const handleClick = (e, i, j) => {
+    if (e.ctrlKey) {
+      if (blockedCells[i][j]) {
+        setBlockedCells((prev) => {
+          const newBlockedCells = [...prev];
+          newBlockedCells[i][j] = false;
+          switch (symmetry) {
+            case 0:
+              newBlockedCells[14 - i][14 - j] = false;
+              break;
+            case 1:
+              newBlockedCells[14 - i][j] = false;
+              break;
+            default:
+              break;
+          }
+
+          return newBlockedCells;
+        });
+      } else {
+        setBlockedCells((prev) => {
+          const newBlockedCells = [...prev];
+          newBlockedCells[i][j] = true;
+          switch (symmetry) {
+            case 0:
+              newBlockedCells[14 - i][14 - j] = true;
+              break;
+            case 1:
+              newBlockedCells[14 - i][j] = true;
+              break;
+            default:
+              break;
+          }
+          return newBlockedCells;
+        });
+      }
+
+      return;
+    }
+    if (grid[i][j] === '#') {
+      return;
+    }
     setSelectedCell({ i: i, j: j });
+    //console.log(gridRefs.current[i][j].getBoundingClientRect());
   };
 
   return (
@@ -57,9 +107,11 @@ const Grid = ({ grid, setGrid }) => {
                 key={`${i}${j}`}
                 pos={{ i: i, j: j }}
                 handleClick={handleClick}
-                selected={
+                isSelected={
                   selectedCell.i === i && selectedCell.j === j ? true : false
                 }
+                isBlocked={blockedCells[i][j]}
+                gridRefs={gridRefs}
               >
                 {el}
               </Cell>
