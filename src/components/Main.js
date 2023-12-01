@@ -38,6 +38,7 @@ const themeLight = {
   textCol: 'rgb(0, 0, 0)',
 };
 
+//const blankGrid = Array.from(Array(15), () => Array(15).fill(''));
 const blankGrid = Array.from(Array(15), () => Array(15).fill(''));
 const blankBlockedCells = Array.from(Array(15), () => Array(15).fill(false));
 const blankRefs = Array.from(Array(15), () => Array(15).fill(null));
@@ -49,6 +50,8 @@ const Main = () => {
   const [grid, setGrid] = useState(blankGrid);
   const [blockedCells, setBlockedCells] = useState(blankBlockedCells);
   const [clues, setClues] = useState([]);
+  const [selectedCell, setSelectedCell] = useState({ i: 0, j: 0 });
+  const [isSelectionAcross, setIsSelectionAcross] = useState(true);
   const gridRefs = useRef(blankRefs);
 
   useEffect(() => {
@@ -87,7 +90,7 @@ const Main = () => {
               wordCells.push(gridRefs.current[i][wordJ]);
             }
             cluesArr.push({
-              direction: 'across',
+              direction: 'down',
               count: clueCount,
               cells: wordCells,
               pos: { i: i, j: j },
@@ -117,10 +120,16 @@ const Main = () => {
           setGrid={setGrid}
           blockedCells={blockedCells}
           setBlockedCells={setBlockedCells}
+          selectedCell={selectedCell}
+          setSelectedCell={setSelectedCell}
+          isSelectionAcross={isSelectionAcross}
+          setIsSelectionAcross={setIsSelectionAcross}
           clues={clues}
           gridRefs={gridRefs}
           symmetry={symmetry}
         />
+
+        {/*This component <Grid /> is very bloated, Not sure how to clean it up for now. */}
         <Clues />
       </MainWrapper>
     </ThemeContext.Provider>

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import Cell from './Cell';
+import FloatingWord from './FloatingWord';
 
 const GridWrapper = styled.div`
   position: relative;
@@ -14,6 +15,8 @@ const GridWrapper = styled.div`
 const GridBoard = styled.div`
   position: relative;
   display: grid;
+  width: auto;
+  height: auto;
   grid-gap: 0;
   grid-template-rows: repeat(15, auto);
   grid-auto-flow: column;
@@ -24,11 +27,24 @@ const Grid = ({
   setGrid,
   blockedCells,
   setBlockedCells,
+  selectedCell,
+  setSelectedCell,
+  isSelectionAcross,
+  setIsSelectionAcross,
   clues,
   gridRefs,
   symmetry,
 }) => {
-  const [selectedCell, setSelectedCell] = useState({ i: 0, j: 0 });
+  const boardRef = useRef(null);
+  const [boardPos, setBoardPos] = useState({});
+
+  useEffect(() => {
+    //TODO - need to adjust with window resize
+    setBoardPos({
+      top: boardRef.current.getBoundingClientRect().top,
+      left: boardRef.current.getBoundingClientRect().left,
+    });
+  }, [setBoardPos, clues]);
 
   useEffect(() => {
     const handleKeyUp = (e) => {
@@ -90,7 +106,8 @@ const Grid = ({
       }
       return;
     }
-    if (grid[i][j] === '#') {
+    if (selectedCell.i === i && selectedCell.j === j) {
+      setIsSelectionAcross((prev) => !prev);
       return;
     }
     setSelectedCell({ i: i, j: j });
@@ -99,30 +116,39 @@ const Grid = ({
 
   return (
     <GridWrapper>
-      <GridBoard>
-        {grid.map((row, i) => {
-          return row.map((el, j) => {
-            const clueArr = clues.filter(
-              (obj) => obj.pos.i === i && obj.pos.j === j
-            );
-            const clueNum = clueArr.length > 0 ? clueArr[0].count : null;
-            return (
-              <Cell
-                key={`${i}${j}`}
-                pos={{ i: i, j: j }}
-                handleClick={handleClick}
-                isSelected={
-                  selectedCell.i === i && selectedCell.j === j ? true : false
-                }
-                isBlocked={blockedCells[i][j]}
-                clueNum={clueNum}
-                gridRefs={gridRefs}
-              >
-                {el}
-              </Cell>
-            );
-          });
-        })}
+      <GridBoard ref={boardRef}>
+        <>
+          {grid.map((row, i) => {
+            return row.map((el, j) => {
+              const clueArr = clues.filter(
+                (obj) => obj.pos.i === i && obj.pos.j === j
+              );
+              const clueNum = clueArr.length > 0 ? clueArr[0].count : null;
+              return (
+                <Cell
+                  key={`${i}${j}`}
+                  pos={{ i: i, j: j }}
+                  handleClick={handleClick}
+                  isSelected={
+                    selectedCell.i === i && selectedCell.j === j ? true : false
+                  }
+                  isBlocked={blockedCells[i][j]}
+                  clueNum={clueNum}
+                  gridRefs={gridRefs}
+                >
+                  {el}
+                </Cell>
+              );
+            });
+          })}
+          <FloatingWord
+            selectedCell={selectedCell}
+            isSelectionAcross={isSelectionAcross}
+            clues={clues}
+            gridRefs={gridRefs}
+            boardPos={boardPos}
+          />
+        </>
       </GridBoard>
     </GridWrapper>
   );
