@@ -1,27 +1,78 @@
 //This could all sit in App.js but I prefer App to remain as clean as possible.
 
-import React, { createContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import styled from 'styled-components';
 import ThemeSwitch from './ThemeSwitch';
-import Settings from './Settings';
 import Grid from './Grid';
-import Clues from './Clues';
+import { motion, AnimatePresence } from 'framer-motion';
+import Banner from './Banner';
 
-const MainWrapper = styled.div`
+export const ThemeContext = createContext();
+
+const Container = styled.div`
   position: relative;
   width: 100vw;
   height: 100vh;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   transition: background-color 0.2s ease;
   font-family: 'Roboto', sans-serif;
+  overflow: hidden;
 `;
 
-export const ThemeContext = createContext();
+const MainWrapper = styled.div`
+  position: relative;
+  width: 100%;
+  height: 92%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.2s ease;
+`;
+
+const SetupWindow = styled(motion.div)`
+  position: relative;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  border-radius: 10px;
+  padding: 50px;
+`;
+
+const SetupItem = styled.div`
+  position: relative;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ItemSelect = styled.select`
+  font-size: 0.8rem;
+  border-radius: 5px;
+  cursor: pointer;
+`;
+
+const Button = styled.button`
+  margin-top: 50px;
+  width: 100%;
+  height: 1.5rem;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+`;
 
 const themeDark = {
   bgCol: 'rgb(17, 17, 21)',
+  bannerCol: 'rgb(14, 14, 18)',
   cellCol: 'rgb(28, 29, 35)',
   unselectedCol: 'rgb(28, 29, 35)',
   selectedCellCol: 'rgb(51, 52, 58)',
@@ -31,6 +82,7 @@ const themeDark = {
 
 const themeLight = {
   bgCol: 'rgb(230, 230, 230)',
+  bannerCol: 'rgb(225, 225, 225)',
   cellCol: 'rgb(255, 255, 255)',
   unselectedCol: 'rgb(200, 200, 200)',
   selectedCellCol: 'rgb(180, 181, 189)',
@@ -38,100 +90,109 @@ const themeLight = {
   textCol: 'rgb(0, 0, 0)',
 };
 
-//const blankGrid = Array.from(Array(15), () => Array(15).fill(''));
-const blankGrid = Array.from(Array(15), () => Array(15).fill(''));
-const blankBlockedCells = Array.from(Array(15), () => Array(15).fill(false));
-const blankRefs = Array.from(Array(15), () => Array(15).fill(null));
-
 const Main = () => {
   const [theme, setTheme] = useState({});
   const [isThemeDark, setIsThemeDark] = useState(true);
-  const [symmetry, setSymmetry] = useState(0); //0 - rotational, 1 - mirrored, 2 - none
-  const [grid, setGrid] = useState(blankGrid);
-  const [blockedCells, setBlockedCells] = useState(blankBlockedCells);
-  const [clues, setClues] = useState([]);
-  const [selectedCell, setSelectedCell] = useState({ i: 0, j: 0 });
-  const [isSelectionAcross, setIsSelectionAcross] = useState(true);
-  const gridRefs = useRef(blankRefs);
+  const [isBoardInitiated, setIsBoardInitiated] = useState(false);
+  const [data, setData] = useState({
+    settings: { symmetry: 'rotational', size: 15 },
+    grid: [],
+  });
 
   useEffect(() => {
     setTheme(() => (isThemeDark ? themeDark : themeLight));
   }, [isThemeDark]);
 
-  useEffect(() => {
-    let clueCount = 1;
-    let cluesArr = [];
-    for (let j = 0; j < blockedCells[0].length; j++) {
-      for (let i = 0; i < blockedCells.length; i++) {
-        let wasClueAdded = false;
-        if (blockedCells[i][j] !== true) {
-          if (i === 0 || (i > 0 && blockedCells[i - 1][j] === true)) {
-            let wordCells = [];
-            for (let wordI = i; wordI <= 14; wordI++) {
-              if (blockedCells[wordI][j] === true) {
-                break;
-              }
-              wordCells.push(gridRefs.current[wordI][j]);
-            }
-            cluesArr.push({
-              direction: 'across',
-              count: clueCount,
-              cells: wordCells,
-              pos: { i: i, j: j },
-            });
-            wasClueAdded = true;
-          }
-          if (j === 0 || (j > 0 && blockedCells[i][j - 1] === true)) {
-            let wordCells = [];
-            for (let wordJ = j; wordJ <= 14; wordJ++) {
-              if (blockedCells[i][wordJ] === true) {
-                break;
-              }
-              wordCells.push(gridRefs.current[i][wordJ]);
-            }
-            cluesArr.push({
-              direction: 'down',
-              count: clueCount,
-              cells: wordCells,
-              pos: { i: i, j: j },
-            });
-            wasClueAdded = true;
-          }
-        }
-        if (wasClueAdded) {
-          clueCount++;
-        }
-      }
-    }
-    setClues(cluesArr);
-  }, [blockedCells]);
-
   const handleThemeClick = () => {
     setIsThemeDark((prev) => !prev);
   };
 
+  const handleSymmetryChange = (e) => {
+    setData((prev) => {
+      const localData = { ...prev };
+      localData.settings = { ...localData.settings };
+      localData.settings.symmetry = e.target.value;
+      return localData;
+    });
+  };
+
+  const handleSizeChange = (e) => {
+    setData((prev) => {
+      const localData = { ...prev };
+      localData.settings = { ...localData.settings };
+      localData.settings.size = e.target.value;
+      return localData;
+    });
+  };
+
   return (
     <ThemeContext.Provider value={theme}>
-      <MainWrapper style={{ backgroundColor: theme.bgCol }}>
-        <ThemeSwitch handleClick={handleThemeClick} isThemeDark={isThemeDark} />
-        <Settings symmetry={symmetry} setSymmetry={setSymmetry} />
-        <Grid
-          grid={grid}
-          setGrid={setGrid}
-          blockedCells={blockedCells}
-          setBlockedCells={setBlockedCells}
-          selectedCell={selectedCell}
-          setSelectedCell={setSelectedCell}
-          isSelectionAcross={isSelectionAcross}
-          setIsSelectionAcross={setIsSelectionAcross}
-          clues={clues}
-          gridRefs={gridRefs}
-          symmetry={symmetry}
-        />
+      <Container>
+        <Banner>
+          <ThemeSwitch
+            handleClick={handleThemeClick}
+            isThemeDark={isThemeDark}
+          />
+        </Banner>
+        <MainWrapper style={{ backgroundColor: theme.bgCol }}>
+          <AnimatePresence mode="wait">
+            {!isBoardInitiated ? (
+              <SetupWindow
+                style={{
+                  color: theme.textCol,
+                  border: `2px solid ${theme.textCol}`,
+                }}
+                exit={{ opacity: 0 }}
+                initial={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                key="setup"
+              >
+                <SetupItem>
+                  <span>Symmetry</span>
+                  <ItemSelect
+                    value={data.settings.symmetry}
+                    onChange={handleSymmetryChange}
+                    style={{
+                      backgroundColor: theme.textCol,
+                      color: theme.bgCol,
+                    }}
+                  >
+                    <option value="rotational">Rotational</option>
+                    <option value="mirrored">Mirrored</option>
+                    <option value="none">None</option>
+                  </ItemSelect>
+                </SetupItem>
 
-        {/*This component <Grid /> is very bloated, Not sure how to clean it up for now. */}
-        <Clues />
-      </MainWrapper>
+                <SetupItem>
+                  <span>Board Size</span>
+                  <ItemSelect
+                    value={data.settings.size}
+                    onChange={handleSizeChange}
+                    style={{
+                      backgroundColor: theme.textCol,
+                      color: theme.bgCol,
+                    }}
+                  >
+                    <option value={15}>15x15</option>
+                    <option value={21}>21x21</option>
+                  </ItemSelect>
+                </SetupItem>
+                <Button
+                  style={{ backgroundColor: theme.textCol, color: theme.bgCol }}
+                  onClick={() => setIsBoardInitiated(true)}
+                >
+                  Start
+                </Button>
+              </SetupWindow>
+            ) : (
+              <div key="board" style={{ width: '100%', height: '100%' }}>
+                <Grid data={data} setData={setData} />
+                {/* <Clues /> */}
+              </div>
+            )}
+          </AnimatePresence>
+        </MainWrapper>
+      </Container>
     </ThemeContext.Provider>
   );
 };
