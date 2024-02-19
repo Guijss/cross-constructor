@@ -32,11 +32,6 @@ const Text = styled.span`
   white-space: pre-line;
 `;
 
-const textStyle = {
-  fontSize: '0.5rem',
-  whiteSpace: 'pre-line',
-};
-
 const Info = ({ text }) => {
   const theme = useContext(ThemeContext);
   const [isHover, setIsHover] = useState(false);

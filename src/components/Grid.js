@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ThemeContext } from './Main';
 import { useContext, useState, useEffect, useRef } from 'react';
 import Info from './Info';
+import Selection from './Selection';
 
 const Container = styled(motion.div)`
   width: 100%;
@@ -46,6 +47,25 @@ const Grid = ({ data, setData }) => {
   const [gridSize, setGridSize] = useState(0);
   const [cellSize, setCellSize] = useState(0);
   const [selectedCell, setSelectedCell] = useState(-1);
+  const [selectedWord, setSelectedWord] = useState({
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  });
+  const [isWordHorizontal, setIsWordHorizontal] = useState(true);
+
+  const xyToIndex = (x, y) => {
+    return x + y * data.settings.size;
+  };
+
+  const indexToX = (index) => {
+    return index % data.settings.size;
+  };
+
+  const indexToY = (index) => {
+    return Math.floor(index / data.settings.size);
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -60,8 +80,17 @@ const Grid = ({ data, setData }) => {
 
   useEffect(() => {
     const handleKey = (e) => {
-      if (selectedCell === -1 || e.keyCode < 65 || e.keyCode > 90) {
-        //no selection or not a letter.
+      if (
+        selectedCell === -1 ||
+        (e.keyCode < 65 && e.keyCode !== 32) ||
+        e.keyCode > 90
+      ) {
+        //no selection or not a letter or not space.
+        return;
+      }
+      if (e.keyCode === 32) {
+        console.log('space');
+        setIsWordHorizontal((prev) => !prev);
         return;
       }
       setData((prev) => {
@@ -106,38 +135,113 @@ const Grid = ({ data, setData }) => {
     setCellSize(gridSize / data.settings.size);
   }, [gridSize, data.settings.size]);
 
+  useEffect(() => {
+    const xyToIndex = (x, y) => {
+      return x + y * data.settings.size;
+    };
+
+    const indexToX = (index) => {
+      return index % data.settings.size;
+    };
+
+    const indexToY = (index) => {
+      return Math.floor(index / data.settings.size);
+    };
+    const getWordCells = (i) => {
+      if (isWordHorizontal) {
+        const x = indexToX(i);
+        const y = indexToY(i);
+        const cells = [i];
+        let lower = x - 1;
+        let upper = x + 1;
+        let foundLower = false;
+        let foundUpper = false;
+        while (!foundLower) {
+          const index = xyToIndex(lower, y);
+          if (lower < 0 || data.grid[index].content === '0') {
+            foundLower = true;
+          } else {
+            cells.push(index);
+            lower--;
+          }
+        }
+        while (!foundUpper) {
+          const index = xyToIndex(upper, y);
+          if (
+            upper > data.settings.size - 1 ||
+            data.grid[index].content === '0'
+          ) {
+            foundUpper = true;
+          } else {
+            cells.push(index);
+            upper++;
+          }
+        }
+        return cells;
+      } else {
+        const x = indexToX(i);
+        const y = indexToY(i);
+        const cells = [i];
+        let lower = y - 1;
+        let upper = y + 1;
+        let foundLower = false;
+        let foundUpper = false;
+        while (!foundLower) {
+          const index = xyToIndex(x, lower);
+          if (lower < 0 || data.grid[index].content === '0') {
+            foundLower = true;
+          } else {
+            cells.push(index);
+            lower--;
+          }
+        }
+        while (!foundUpper) {
+          const index = xyToIndex(x, upper);
+          if (
+            upper > data.settings.size - 1 ||
+            data.grid[index].content === '0'
+          ) {
+            foundUpper = true;
+          } else {
+            cells.push(index);
+            upper++;
+          }
+        }
+        return cells;
+      }
+    };
+
+    if (selectedCell === -1) {
+      return;
+    }
+    const cells = getWordCells(selectedCell);
+    setSelectedWord(() => {
+      const firstCell = Math.min(...cells);
+      const lastCell = Math.max(...cells);
+      const top = indexToY(firstCell) * cellSize;
+      const bottom = indexToY(lastCell) * cellSize + cellSize;
+      const left = indexToX(firstCell) * cellSize;
+      const right = indexToX(lastCell) * cellSize + cellSize;
+      return { top: top, right: right, bottom: bottom, left: left };
+    });
+  }, [selectedCell, isWordHorizontal, data.grid, cellSize, data.settings.size]);
+
   const handleClick = (e, button, index) => {
     if (button === 'leftClick') {
       if (data.grid[index].content === '0') {
         //can't select.
         return;
       }
-      setSelectedCell((prev) => {
-        if (index === prev) {
-          //de-select.
-          return -1;
-        } else {
-          return index;
-        }
-      });
+      if (selectedCell === index) {
+        setIsWordHorizontal((prev) => !prev);
+      }
+      setSelectedCell(index);
       return;
     }
 
     if (button === 'rightClick') {
       e.preventDefault();
       setData((prev) => {
-        const xyToIndex = (x, y) => {
-          return x + y * localData.settings.size;
-        };
-
-        const indexToX = (index) => {
-          return index % localData.settings.size;
-        };
-
-        const indexToY = (index) => {
-          return Math.floor(index / localData.settings.size);
-        };
-
         //first we change clicked cell content to "0". that indicates the cell should be black.
         const localData = { ...prev };
         localData.grid = [...localData.grid];
@@ -223,6 +327,7 @@ const Grid = ({ data, setData }) => {
         }}
       >
         <Info text={infoText} />
+        {selectedCell !== -1 && <Selection rect={selectedWord} />}
         {data.grid.map((cell, i) => (
           <Cell
             key={i}
