@@ -46,14 +46,14 @@ const Grid = ({ data, setData }) => {
   const gridRef = useRef();
   const [gridSize, setGridSize] = useState(0);
   const [cellSize, setCellSize] = useState(0);
-  const [selectedCell, setSelectedCell] = useState(-1);
   const [selectedWord, setSelectedWord] = useState({
     top: 0,
     right: 0,
     bottom: 0,
     left: 0,
   });
-  const [isWordHorizontal, setIsWordHorizontal] = useState(true);
+  const [selectedWordCells, setSelectedWordCells] = useState([]);
+  // const [isWordHorizontal, setIsWordHorizontal] = useState(true);
 
   const xyToIndex = (x, y) => {
     return x + y * data.settings.size;
@@ -80,26 +80,29 @@ const Grid = ({ data, setData }) => {
 
   useEffect(() => {
     const handleKey = (e) => {
-      if (
-        selectedCell === -1 ||
-        (e.keyCode < 65 && e.keyCode !== 32) ||
-        e.keyCode > 90
-      ) {
-        //no selection or not a letter or not space.
-        return;
-      }
-      if (e.keyCode === 32) {
-        console.log('space');
-        setIsWordHorizontal((prev) => !prev);
+      if ((e.keyCode < 65 && e.keyCode !== 32) || e.keyCode > 90) {
+        //not a letter or not space.
         return;
       }
       setData((prev) => {
         const localData = { ...prev };
+        if (localData.selectedCell === -1) {
+          return localData;
+        }
+        if (e.keyCode === 32) {
+          localData.isWordHorizontal = !localData.isWordHorizontal;
+          return localData;
+        }
         localData.grid = [...localData.grid];
-        localData.grid[selectedCell] = {
-          ...localData.grid[selectedCell],
+        localData.grid[localData.selectedCell] = {
+          ...localData.grid[localData.selectedCell],
           content: e.key.toUpperCase(),
         };
+        //advance selected cell.
+        const i = selectedWordCells.indexOf(localData.selectedCell);
+        if (i < selectedWordCells.length - 1) {
+          localData.selectedCell = selectedWordCells[i + 1];
+        }
         return localData;
       });
     };
@@ -108,7 +111,7 @@ const Grid = ({ data, setData }) => {
     return () => {
       window.removeEventListener('keydown', handleKey);
     };
-  }, [selectedCell, setData]);
+  }, [setData, selectedWordCells]);
 
   useEffect(() => {
     setData((prev) => {
@@ -148,7 +151,7 @@ const Grid = ({ data, setData }) => {
       return Math.floor(index / data.settings.size);
     };
     const getWordCells = (i) => {
-      if (isWordHorizontal) {
+      if (data.isWordHorizontal) {
         const x = indexToX(i);
         const y = indexToY(i);
         const cells = [i];
@@ -211,10 +214,10 @@ const Grid = ({ data, setData }) => {
       }
     };
 
-    if (selectedCell === -1) {
+    if (data.selectedCell === -1) {
       return;
     }
-    const cells = getWordCells(selectedCell);
+    const cells = getWordCells(data.selectedCell);
     setSelectedWord(() => {
       const firstCell = Math.min(...cells);
       const lastCell = Math.max(...cells);
@@ -224,7 +227,14 @@ const Grid = ({ data, setData }) => {
       const right = indexToX(lastCell) * cellSize + cellSize;
       return { top: top, right: right, bottom: bottom, left: left };
     });
-  }, [selectedCell, isWordHorizontal, data.grid, cellSize, data.settings.size]);
+    setSelectedWordCells(cells.sort((a, b) => a - b));
+  }, [
+    cellSize,
+    data.isWordHorizontal,
+    data.grid,
+    data.selectedCell,
+    data.settings.size,
+  ]);
 
   const handleClick = (e, button, index) => {
     if (button === 'leftClick') {
@@ -232,10 +242,14 @@ const Grid = ({ data, setData }) => {
         //can't select.
         return;
       }
-      if (selectedCell === index) {
-        setIsWordHorizontal((prev) => !prev);
-      }
-      setSelectedCell(index);
+      setData((prev) => {
+        const localData = { ...prev };
+        if (localData.selectedCell === index) {
+          localData.isWordHorizontal = !localData.isWordHorizontal;
+        }
+        localData.selectedCell = index;
+        return localData;
+      });
       return;
     }
 
@@ -250,8 +264,8 @@ const Grid = ({ data, setData }) => {
           localData.grid[index].content = '';
         } else {
           localData.grid[index].content = '0';
-          if (selectedCell === index) {
-            setSelectedCell(-1);
+          if (localData.selectedCell === index) {
+            localData.selectedCell = -1;
           }
         }
         //now we change equivalent cell to "0" according to symmetry option.
@@ -275,8 +289,8 @@ const Grid = ({ data, setData }) => {
             localData.grid[symIndex].content = '';
           } else {
             localData.grid[symIndex].content = '0';
-            if (selectedCell === symIndex) {
-              setSelectedCell(-1);
+            if (localData.selectedCell === symIndex) {
+              localData.selectedCell = -1;
             }
           }
         }
@@ -327,7 +341,7 @@ const Grid = ({ data, setData }) => {
         }}
       >
         <Info text={infoText} />
-        {selectedCell !== -1 && <Selection rect={selectedWord} />}
+        {data.selectedCell !== -1 && <Selection rect={selectedWord} />}
         {data.grid.map((cell, i) => (
           <Cell
             key={i}
@@ -337,7 +351,7 @@ const Grid = ({ data, setData }) => {
               backgroundColor:
                 cell.content === '0'
                   ? 'black'
-                  : selectedCell === i
+                  : data.selectedCell === i
                   ? theme.selectedCellCol
                   : theme.cellCol,
               color: theme.textCol,
@@ -346,7 +360,7 @@ const Grid = ({ data, setData }) => {
             onContextMenu={(e) => handleClick(e, 'rightClick', i)}
             onClick={(e) => handleClick(e, 'leftClick', i)}
           >
-            <CellNum style={{ fontSize: cellSize * 0.25 }}>
+            <CellNum style={{ fontSize: cellSize * 0.2 }}>
               {cell.number}
             </CellNum>
             <div style={{ fontSize: cellSize - 5 }}>

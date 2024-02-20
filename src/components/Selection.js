@@ -1,4 +1,6 @@
 import styled from 'styled-components';
+import { ThemeContext } from './Main';
+import { useContext } from 'react';
 
 const Frame = styled.div`
   position: absolute;
@@ -7,6 +9,7 @@ const Frame = styled.div`
   box-sizing: border-box;
 `;
 const Selection = ({ rect }) => {
+  const theme = useContext(ThemeContext);
   return (
     <Frame
       style={{
@@ -14,7 +17,7 @@ const Selection = ({ rect }) => {
         left: `${rect.left}px`,
         width: `${rect.right - rect.left}px`,
         height: `${rect.bottom - rect.top}px`,
-        border: `2px solid red`,
+        border: `2px solid ${theme.frameCol}`,
       }}
     ></Frame>
   );

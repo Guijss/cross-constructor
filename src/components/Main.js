@@ -77,6 +77,7 @@ const themeDark = {
   unselectedCol: 'rgb(28, 29, 35)',
   selectedCellCol: 'rgb(51, 52, 58)',
   cellBorderCol: 'rgb(100, 100, 100)',
+  frameCol: 'rgb(200, 200, 200)',
   textCol: 'rgb(150, 150, 150)',
 };
 
@@ -87,6 +88,7 @@ const themeLight = {
   unselectedCol: 'rgb(200, 200, 200)',
   selectedCellCol: 'rgb(180, 181, 189)',
   cellBorderCol: 'rgb(0, 0, 0)',
+  frameCol: 'rgb(0, 0, 0)',
   textCol: 'rgb(0, 0, 0)',
 };
 
@@ -97,6 +99,9 @@ const Main = () => {
   const [data, setData] = useState({
     settings: { symmetry: 'rotational', size: 15 },
     grid: [],
+    selectedCell: -1,
+    selectedWordCells: [],
+    isWordHorizontal: true,
   });
 
   useEffect(() => {
