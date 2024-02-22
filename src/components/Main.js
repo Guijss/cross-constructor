@@ -101,6 +101,7 @@ const Main = () => {
     grid: [],
     selectedCell: -1,
     words: { across: [], down: [] },
+    selectedWord: -1,
     isWordHorizontal: true,
   });
 

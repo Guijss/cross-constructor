@@ -53,7 +53,6 @@ const Grid = ({ data, setData }) => {
     left: 0,
   });
   const [selectedWordCells, setSelectedWordCells] = useState([]);
-  // const [isWordHorizontal, setIsWordHorizontal] = useState(true);
 
   const xyToIndex = (x, y) => {
     return x + y * data.settings.size;
@@ -80,8 +79,11 @@ const Grid = ({ data, setData }) => {
 
   useEffect(() => {
     const handleKey = (e) => {
-      if ((e.keyCode < 65 && e.keyCode !== 32) || e.keyCode > 90) {
-        //not a letter or not space.
+      if (
+        (e.keyCode < 65 && e.keyCode !== 32 && e.keyCode !== 9) ||
+        e.keyCode > 90
+      ) {
+        //not a letter or not space not tab.
         return;
       }
       setData((prev) => {
@@ -90,9 +92,37 @@ const Grid = ({ data, setData }) => {
           return localData;
         }
         if (e.keyCode === 32) {
+          //space
           localData.isWordHorizontal = !localData.isWordHorizontal;
           return localData;
         }
+        if (e.keyCode === 9) {
+          e.preventDefault();
+          //tab
+          localData.selectedWord++;
+          if (localData.isWordHorizontal) {
+            if (localData.selectedWord >= localData.words.across.length) {
+              localData.selectedWord = 0;
+              localData.isWordHorizontal = false;
+              localData.selectedCell = localData.words.down[0][0];
+              return localData;
+            }
+            localData.selectedCell =
+              localData.words.across[localData.selectedWord][0];
+            return localData;
+          } else {
+            if (localData.selectedWord >= localData.words.down.length) {
+              localData.selectedWord = 0;
+              localData.isWordHorizontal = true;
+              localData.selectedCell = localData.words.across[0][0];
+              return localData;
+            }
+            localData.selectedCell =
+              localData.words.down[localData.selectedWord][0];
+            return localData;
+          }
+        }
+
         localData.grid = [...localData.grid];
         localData.grid[localData.selectedCell] = {
           ...localData.grid[localData.selectedCell],
@@ -114,6 +144,18 @@ const Grid = ({ data, setData }) => {
   }, [setData, selectedWordCells]);
 
   useEffect(() => {
+    //this is to setup the initial grid numbers and words state. TODO: refactor to not have repeated code (code is repeated on right click after grid changes.)
+    const xyToIndex = (x, y) => {
+      return x + y * data.settings.size;
+    };
+
+    const indexToX = (index) => {
+      return index % data.settings.size;
+    };
+
+    const indexToY = (index) => {
+      return Math.floor(index / data.settings.size);
+    };
     setData((prev) => {
       const localData = { ...prev };
       localData.grid = [];
@@ -126,9 +168,56 @@ const Grid = ({ data, setData }) => {
           });
         }
       }
+      //wipe words to rebuild.
+      localData.words = { ...localData.words, across: [], down: [] };
+      for (let i = 0; i < localData.grid.length; i++) {
+        if (localData.grid[i].content === '0') {
+          //we don't ever add a clue number on a black cell.
+          continue;
+        }
+        const x = indexToX(i);
+        const y = indexToY(i);
+        const leftCellIndex = x > 0 ? xyToIndex(x - 1, y) : -1;
+        const upCellIndex = y > 0 ? xyToIndex(x, y - 1) : -1;
+        if (
+          x === 0 ||
+          y === 0 ||
+          localData.grid[leftCellIndex].content === '0' ||
+          localData.grid[upCellIndex].content === '0'
+        ) {
+          //first column, first row or after a black square.
+          const across = [];
+          const down = [];
+          let localX = x;
+          if (x === 0 || localData.grid[leftCellIndex].content === '0') {
+            //across word
+            while (localData.grid[xyToIndex(localX, y)].content !== '0') {
+              across.push(xyToIndex(localX, y));
+              localX++;
+              if (localX >= localData.settings.size) {
+                break;
+              }
+            }
+            localData.words.across = [...localData.words.across, across];
+          }
+
+          let localY = y;
+          if (y === 0 || localData.grid[upCellIndex].content === '0') {
+            //down word
+            while (localData.grid[xyToIndex(x, localY)].content !== '0') {
+              down.push(xyToIndex(x, localY));
+              localY++;
+              if (localY >= localData.settings.size) {
+                break;
+              }
+            }
+            localData.words.down = [...localData.words.down, down];
+          }
+        }
+      }
       return localData;
     });
-  }, [setData]);
+  }, [setData, data.settings.size]);
 
   useEffect(() => {
     setGridSize(containerRef.current.clientHeight * 0.95);
@@ -229,6 +318,7 @@ const Grid = ({ data, setData }) => {
     });
     setSelectedWordCells(cells.sort((a, b) => a - b));
   }, [
+    setData,
     cellSize,
     data.isWordHorizontal,
     data.grid,
@@ -248,6 +338,21 @@ const Grid = ({ data, setData }) => {
           localData.isWordHorizontal = !localData.isWordHorizontal;
         }
         localData.selectedCell = index;
+        if (localData.isWordHorizontal) {
+          for (let i = 0; i < localData.words.across.length; i++) {
+            if (localData.words.across[i].includes(index)) {
+              localData.selectedWord = i;
+              break;
+            }
+          }
+        } else {
+          for (let i = 0; i < localData.words.down.length; i++) {
+            if (localData.words.down[i].includes(index)) {
+              localData.selectedWord = i;
+              break;
+            }
+          }
+        }
         return localData;
       });
       return;
@@ -309,8 +414,8 @@ const Grid = ({ data, setData }) => {
 
           const x = indexToX(i);
           const y = indexToY(i);
-          const leftCellIndex = x > 0 ? xyToIndex(x - 1, y) : -1; //Math.min(0, xyToIndex(x - 1, y));
-          const upCellIndex = y > 0 ? xyToIndex(x, y - 1) : -1; //Math.min(0, xyToIndex(x, y - 1));
+          const leftCellIndex = x > 0 ? xyToIndex(x - 1, y) : -1;
+          const upCellIndex = y > 0 ? xyToIndex(x, y - 1) : -1;
           if (
             x === 0 ||
             y === 0 ||
@@ -345,11 +450,9 @@ const Grid = ({ data, setData }) => {
               }
               localData.words.down = [...localData.words.down, down];
             }
-            //localData.words = { across: across, down: down };
             localData.grid[i] = { ...localData.grid[i], number: num++ };
           }
         }
-        console.log(localData.words);
         return localData;
       });
     }
