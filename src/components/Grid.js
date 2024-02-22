@@ -297,6 +297,8 @@ const Grid = ({ data, setData }) => {
 
         //recalculate cell number to indicate which clue it is.
         let num = 1;
+        //wipe words to rebuild.
+        localData.words = { ...localData.words, across: [], down: [] };
         for (let i = 0; i < localData.grid.length; i++) {
           //first we wipe every cell`s number and then recalculate.
           localData.grid[i] = { ...localData.grid[i], number: '' };
@@ -307,8 +309,8 @@ const Grid = ({ data, setData }) => {
 
           const x = indexToX(i);
           const y = indexToY(i);
-          const leftCellIndex = xyToIndex(x - 1, y);
-          const upCellIndex = xyToIndex(x, y - 1);
+          const leftCellIndex = x > 0 ? xyToIndex(x - 1, y) : -1; //Math.min(0, xyToIndex(x - 1, y));
+          const upCellIndex = y > 0 ? xyToIndex(x, y - 1) : -1; //Math.min(0, xyToIndex(x, y - 1));
           if (
             x === 0 ||
             y === 0 ||
@@ -316,10 +318,38 @@ const Grid = ({ data, setData }) => {
             localData.grid[upCellIndex].content === '0'
           ) {
             //first column, first row or after a black square.
+            const across = [];
+            const down = [];
+            let localX = x;
+            if (x === 0 || localData.grid[leftCellIndex].content === '0') {
+              //across word
+              while (localData.grid[xyToIndex(localX, y)].content !== '0') {
+                across.push(xyToIndex(localX, y));
+                localX++;
+                if (localX >= localData.settings.size) {
+                  break;
+                }
+              }
+              localData.words.across = [...localData.words.across, across];
+            }
+
+            let localY = y;
+            if (y === 0 || localData.grid[upCellIndex].content === '0') {
+              //down word
+              while (localData.grid[xyToIndex(x, localY)].content !== '0') {
+                down.push(xyToIndex(x, localY));
+                localY++;
+                if (localY >= localData.settings.size) {
+                  break;
+                }
+              }
+              localData.words.down = [...localData.words.down, down];
+            }
+            //localData.words = { across: across, down: down };
             localData.grid[i] = { ...localData.grid[i], number: num++ };
-            continue;
           }
         }
+        console.log(localData.words);
         return localData;
       });
     }

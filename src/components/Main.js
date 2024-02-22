@@ -100,7 +100,7 @@ const Main = () => {
     settings: { symmetry: 'rotational', size: 15 },
     grid: [],
     selectedCell: -1,
-    selectedWordCells: [],
+    words: { across: [], down: [] },
     isWordHorizontal: true,
   });
 
