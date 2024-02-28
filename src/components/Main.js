@@ -104,6 +104,7 @@ const Main = () => {
     words: { across: [], down: [] },
     selectedWord: -1,
     isWordHorizontal: true,
+    ifGridOnFocus: true,
   });
 
   useEffect(() => {

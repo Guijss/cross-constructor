@@ -89,20 +89,37 @@ const Grid = ({ data, setData }) => {
   useEffect(() => {
     const handleKey = (e) => {
       if (
-        (e.keyCode < 65 && e.keyCode !== 32 && e.keyCode !== 9) ||
+        (e.keyCode < 65 &&
+          e.keyCode !== 32 &&
+          e.keyCode !== 9 &&
+          e.keyCode !== 8) ||
         e.keyCode > 90
       ) {
-        //not a letter or not space not tab.
+        //not a letter or not space not tab not backspace.
         return;
       }
       setData((prev) => {
         const localData = { ...prev };
-        if (localData.selectedCell === -1) {
+        if (localData.selectedCell === -1 || !localData.ifGridOnFocus) {
           return localData;
         }
         if (e.keyCode === 32) {
           //space
           localData.isWordHorizontal = !localData.isWordHorizontal;
+          return localData;
+        }
+        if (e.keyCode === 8) {
+          //backspace
+          localData.grid = [...localData.grid];
+          localData.grid[localData.selectedCell] = {
+            ...localData.grid[localData.selectedCell],
+            content: '',
+          };
+          //retreat selected cell.
+          const i = selectedWordCells.indexOf(localData.selectedCell);
+          if (i > 0) {
+            localData.selectedCell = selectedWordCells[i - 1];
+          }
           return localData;
         }
         if (e.keyCode === 9) {
@@ -352,185 +369,230 @@ const Grid = ({ data, setData }) => {
 
     if (button === 'rightClick') {
       e.preventDefault();
-      setData((prev) => {
-        //first we change clicked cell content to "0". that indicates the cell should be black.
-        const localData = { ...prev };
-        const isCellBlack = localData.grid[index].content === '0';
-        localData.grid = [...localData.grid];
-        localData.grid[index] = { ...localData.grid[index] };
-        if (isCellBlack) {
-          localData.grid[index].content = '';
+      //first we change clicked cell content to "0". that indicates the cell should be black.
+      const newData = { ...data };
+      const isCellBlack = newData.grid[index].content === '0';
+      newData.grid = [...newData.grid];
+      newData.grid[index] = { ...newData.grid[index] };
+      if (isCellBlack) {
+        newData.grid[index].content = '';
+      } else {
+        newData.grid[index].content = '0';
+        if (newData.selectedCell === index) {
+          newData.selectedCell = -1;
+        }
+      }
+      //now we change equivalent cell to "0" according to symmetry option.
+      let symIndex = -1;
+      if (newData.settings.symmetry === 'rotational') {
+        const x = indexToX(index);
+        const y = indexToY(index);
+        const symX = newData.settings.size - 1 - x;
+        const symY = newData.settings.size - 1 - y;
+        symIndex = xyToIndex(symX, symY);
+      } else if (newData.settings.symmetry === 'mirrored') {
+        const x = indexToX(index);
+        const y = indexToY(index);
+        const symX = newData.settings.size - 1 - x;
+        symIndex = xyToIndex(symX, y);
+      }
+      if (symIndex !== index && symIndex !== -1) {
+        //only change if it's not the same as clicked cell and the symmetry is set to NOT "none".
+        newData.grid[symIndex] = { ...newData.grid[symIndex] };
+        if (newData.grid[symIndex].content === '0') {
+          newData.grid[symIndex].content = '';
         } else {
-          localData.grid[index].content = '0';
-          if (localData.selectedCell === index) {
-            localData.selectedCell = -1;
+          newData.grid[symIndex].content = '0';
+          if (newData.selectedCell === symIndex) {
+            newData.selectedCell = -1;
           }
         }
-        //now we change equivalent cell to "0" according to symmetry option.
-        let symIndex = -1;
-        if (localData.settings.symmetry === 'rotational') {
-          const x = indexToX(index);
-          const y = indexToY(index);
-          const symX = localData.settings.size - 1 - x;
-          const symY = localData.settings.size - 1 - y;
-          symIndex = xyToIndex(symX, symY);
-        } else if (localData.settings.symmetry === 'mirrored') {
-          const x = indexToX(index);
-          const y = indexToY(index);
-          const symX = localData.settings.size - 1 - x;
-          symIndex = xyToIndex(symX, y);
-        }
-        if (symIndex !== index && symIndex !== -1) {
-          //only change if it's not the same as clicked cell and the symmetry is set to NOT "none".
-          localData.grid[symIndex] = { ...localData.grid[symIndex] };
-          if (localData.grid[symIndex].content === '0') {
-            localData.grid[symIndex].content = '';
-          } else {
-            localData.grid[symIndex].content = '0';
-            if (localData.selectedCell === symIndex) {
-              localData.selectedCell = -1;
-            }
-          }
-        }
-        //recalculate cell number to indicate which clue it is.
-        let num = 1;
-        //wipe words to rebuild.
-        localData.words = { ...localData.words };
-        for (let i = 0; i < localData.grid.length; i++) {
-          //first we wipe every cell`s number and then recalculate.
-          localData.grid[i] = { ...localData.grid[i], number: '' };
-          if (localData.grid[i].content === '0') {
-            //we don't ever add a clue number on a black cell.
-            continue;
-          }
-          const x = indexToX(i);
-          const y = indexToY(i);
-          const leftCellIndex = x > 0 ? xyToIndex(x - 1, y) : -1;
-          const upCellIndex = y > 0 ? xyToIndex(x, y - 1) : -1;
-          if (
-            x === 0 ||
-            y === 0 ||
-            localData.grid[leftCellIndex].content === '0' ||
-            localData.grid[upCellIndex].content === '0'
-          ) {
-            //first column, first row or after a black square.
-            const across = [];
-            const down = [];
-            let localX = x;
-            if (x === 0 || localData.grid[leftCellIndex].content === '0') {
-              let clue = '';
-              const word = localData.words.across.find(
-                (e) => e.wordCells[0] === i
-              );
-              if (word !== undefined) {
-                clue = word.clue;
-              }
-              //across word
-              while (localData.grid[xyToIndex(localX, y)].content !== '0') {
-                across.push(xyToIndex(localX, y));
-                localX++;
-                if (localX >= localData.settings.size) {
-                  break;
-                }
-              }
-              localData.words.across = [
-                ...localData.words.across,
-                { wordCells: across, clue: clue },
-              ];
-            }
+      }
+      //recalculate cell number to indicate which clue it is.
+      let num = 1;
+      //wipe words to rebuild.
+      const previousAcross = [...newData.words.across];
+      const previousDown = [...newData.words.down];
+      newData.words = { ...newData.words, across: [], down: [] };
 
-            let localY = y;
-            if (y === 0 || localData.grid[upCellIndex].content === '0') {
-              let clue = '';
-              const word = localData.words.down.find(
-                (e) => e.wordCells[0] === i
-              );
-              if (word !== undefined) {
-                clue = word.clue;
-              }
-              //down word
-              while (localData.grid[xyToIndex(x, localY)].content !== '0') {
-                down.push(xyToIndex(x, localY));
-                localY++;
-                if (localY >= localData.settings.size) {
-                  break;
-                }
-              }
-              localData.words.down = [
-                ...localData.words.down,
-                { wordCells: down, clue: clue },
-              ];
-            }
-            localData.grid[i] = { ...localData.grid[i], number: num++ };
-          }
+      for (let i = 0; i < newData.grid.length; i++) {
+        //first we wipe every cell`s number and then recalculate.
+        newData.grid[i] = { ...newData.grid[i], number: '' };
+        if (newData.grid[i].content === '0') {
+          //we don't ever add a clue number on a black cell.
+          continue;
         }
-        return localData;
-      });
+        const x = indexToX(i);
+        const y = indexToY(i);
+        const leftCellIndex = x > 0 ? xyToIndex(x - 1, y) : -1;
+        const upCellIndex = y > 0 ? xyToIndex(x, y - 1) : -1;
+        if (
+          x === 0 ||
+          y === 0 ||
+          newData.grid[leftCellIndex].content === '0' ||
+          newData.grid[upCellIndex].content === '0'
+        ) {
+          //first column, first row or after a black square.
+          const across = [];
+          const down = [];
+          let localX = x;
+          if (x === 0 || newData.grid[leftCellIndex].content === '0') {
+            let clue = '';
+            const word = previousAcross.find((e) => e.wordCells[0] === i);
+            if (word !== undefined) {
+              clue = word.clue;
+            }
+            //across word
+            while (newData.grid[xyToIndex(localX, y)].content !== '0') {
+              across.push(xyToIndex(localX, y));
+              localX++;
+              if (localX >= newData.settings.size) {
+                break;
+              }
+            }
+            newData.words.across = [
+              ...newData.words.across,
+              { wordCells: across, clue: clue },
+            ];
+          }
+
+          let localY = y;
+          if (y === 0 || newData.grid[upCellIndex].content === '0') {
+            let clue = '';
+            const word = previousDown.find((e) => e.wordCells[0] === i);
+            if (word !== undefined) {
+              clue = word.clue;
+            }
+            //down word
+            while (newData.grid[xyToIndex(x, localY)].content !== '0') {
+              down.push(xyToIndex(x, localY));
+              localY++;
+              if (localY >= newData.settings.size) {
+                break;
+              }
+            }
+            newData.words.down = [
+              ...newData.words.down,
+              { wordCells: down, clue: clue },
+            ];
+          }
+          newData.grid[i] = { ...newData.grid[i], number: num++ };
+        }
+      }
+      setData(newData);
+      // setData((prev) => {
+      // //first we change clicked cell content to "0". that indicates the cell should be black.
+      // const localData = { ...prev };
+      // const isCellBlack = localData.grid[index].content === '0';
+      // localData.grid = [...localData.grid];
+      // localData.grid[index] = { ...localData.grid[index] };
+      // if (isCellBlack) {
+      //   localData.grid[index].content = '';
+      // } else {
+      //   localData.grid[index].content = '0';
+      //   if (localData.selectedCell === index) {
+      //     localData.selectedCell = -1;
+      //   }
+      // }
+      // //now we change equivalent cell to "0" according to symmetry option.
+      // let symIndex = -1;
+      // if (localData.settings.symmetry === 'rotational') {
+      //   const x = indexToX(index);
+      //   const y = indexToY(index);
+      //   const symX = localData.settings.size - 1 - x;
+      //   const symY = localData.settings.size - 1 - y;
+      //   symIndex = xyToIndex(symX, symY);
+      // } else if (localData.settings.symmetry === 'mirrored') {
+      //   const x = indexToX(index);
+      //   const y = indexToY(index);
+      //   const symX = localData.settings.size - 1 - x;
+      //   symIndex = xyToIndex(symX, y);
+      // }
+      // if (symIndex !== index && symIndex !== -1) {
+      //   //only change if it's not the same as clicked cell and the symmetry is set to NOT "none".
+      //   localData.grid[symIndex] = { ...localData.grid[symIndex] };
+      //   if (localData.grid[symIndex].content === '0') {
+      //     localData.grid[symIndex].content = '';
+      //   } else {
+      //     localData.grid[symIndex].content = '0';
+      //     if (localData.selectedCell === symIndex) {
+      //       localData.selectedCell = -1;
+      //     }
+      //   }
+      // }
+      // //recalculate cell number to indicate which clue it is.
+      // let num = 1;
+      // //wipe words to rebuild.
+      // const previousAcross = [...localData.words.across];
+      // const previousDown = [...localData.words.down];
+      // localData.words = { ...localData.words, across: [], down: [] };
+      // for (let i = 0; i < localData.grid.length; i++) {
+      //   //first we wipe every cell`s number and then recalculate.
+      //   localData.grid[i] = { ...localData.grid[i], number: '' };
+      //   if (localData.grid[i].content === '0') {
+      //     //we don't ever add a clue number on a black cell.
+      //     continue;
+      //   }
+      //   const x = indexToX(i);
+      //   const y = indexToY(i);
+      //   const leftCellIndex = x > 0 ? xyToIndex(x - 1, y) : -1;
+      //   const upCellIndex = y > 0 ? xyToIndex(x, y - 1) : -1;
+      //   if (
+      //     x === 0 ||
+      //     y === 0 ||
+      //     localData.grid[leftCellIndex].content === '0' ||
+      //     localData.grid[upCellIndex].content === '0'
+      //   ) {
+      //     //first column, first row or after a black square.
+      //     const across = [];
+      //     const down = [];
+      //     let localX = x;
+      //     if (x === 0 || localData.grid[leftCellIndex].content === '0') {
+      //       let clue = '';
+      //       const word = previousAcross.find((e) => e.wordCells[0] === i);
+      //       if (word !== undefined) {
+      //         clue = word.clue;
+      //       }
+      //       //across word
+      //       while (localData.grid[xyToIndex(localX, y)].content !== '0') {
+      //         across.push(xyToIndex(localX, y));
+      //         localX++;
+      //         if (localX >= localData.settings.size) {
+      //           break;
+      //         }
+      //       }
+      //       localData.words.across = [
+      //         ...localData.words.across,
+      //         { wordCells: across, clue: clue },
+      //       ];
+      //     }
+      //     let localY = y;
+      //     if (y === 0 || localData.grid[upCellIndex].content === '0') {
+      //       let clue = '';
+      //       const word = previousDown.find((e) => e.wordCells[0] === i);
+      //       if (word !== undefined) {
+      //         clue = word.clue;
+      //       }
+      //       //down word
+      //       while (localData.grid[xyToIndex(x, localY)].content !== '0') {
+      //         down.push(xyToIndex(x, localY));
+      //         localY++;
+      //         if (localY >= localData.settings.size) {
+      //           break;
+      //         }
+      //       }
+      //       localData.words.down = [
+      //         ...localData.words.down,
+      //         { wordCells: down, clue: clue },
+      //       ];
+      //     }
+      //     localData.grid[i] = { ...localData.grid[i], number: num++ };
+      //   }
+      // }
+      // return localData;
+      // });
     }
   };
-
-  // const recalculateGrid = useCallback(
-  //   (localData, clickedIndex, symIndex, isCellBlack) => {
-  //     // const x = indexToX(clickedIndex); //changed line down
-  //     // const y = indexToY(clickedIndex); //changed line across
-  //     let changedLinesAcross = [
-  //       indexToY(clickedIndex),
-  //       indexToY(symIndex),
-  //     ].sort((a, b) => a - b);
-  //     //remove duplicate
-  //     changedLinesAcross = changedLinesAcross.filter(
-  //       (value, i) => changedLinesAcross.indexOf(value) === i
-  //     );
-  //     let changedLinesDown = [indexToX(clickedIndex), indexToX(symIndex)].sort(
-  //       (a, b) => a - b
-  //     );
-  //     //remove duplicate
-  //     changedLinesDown = changedLinesDown.filter(
-  //       (value, i) => changedLinesDown.indexOf(value) === i
-  //     );
-  //     let changedIndices = [];
-  //     let wordsToRemove = 0;
-  //     for (let word = 0; word < localData.words.across.length; word++) {
-  //       const firstCellIndex = localData.words.across[word][0];
-  //       let indexAdded = false;
-  //       for (let i = 0; i < changedLinesAcross.length; i++) {
-  //         if (indexToY(firstCellIndex) === changedLinesAcross[i]) {
-  //           wordsToRemove++;
-  //           if (!indexAdded) {
-  //             changedIndices.push(word);
-  //             indexAdded = true;
-  //           }
-  //         }
-  //       }
-  //     }
-  //     //words to remove per line.
-  //     wordsToRemove /= changedLinesAcross.length;
-  //     //backwards for loop so when we remove elements we don't disturb the position of any "to be changed" elements.
-  //     for (let i = changedIndices.length - 1; i >= 0; i--) {
-  //       const newLineWords = [];
-  //       let word = [];
-  //       for (let x = 0; x < localData.settings.size; x++) {
-  //         const currIndex = xyToIndex(x, changedLinesAcross[i]);
-  //         if (localData.grid[currIndex].content === '0') {
-  //           if (word.length > 0) {
-  //             newLineWords.push(word);
-  //           }
-  //           word = [];
-  //         } else {
-  //           word.push(currIndex);
-  //         }
-  //       }
-  //       localData.words.across.splice(
-  //         changedIndices[i],
-  //         wordsToRemove,
-  //         ...newLineWords
-  //       );
-  //     }
-
-  //     return localData;
-  //   },
-  //   [indexToX, indexToY, xyToIndex]
-  // );
 
   return (
     <Container
