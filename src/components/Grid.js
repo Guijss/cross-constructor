@@ -1,12 +1,11 @@
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { ThemeContext } from './Main';
-import { useContext, useState, useEffect, useRef } from 'react';
+import { useContext, useState, useEffect, useRef, useCallback } from 'react';
 import Info from './Info';
 import Selection from './Selection';
 
 const Container = styled(motion.div)`
-  width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
@@ -54,23 +53,33 @@ const Grid = ({ data, setData }) => {
   });
   const [selectedWordCells, setSelectedWordCells] = useState([]);
 
-  const xyToIndex = (x, y) => {
-    return x + y * data.settings.size;
-  };
+  const xyToIndex = useCallback(
+    (x, y) => {
+      return x + y * data.settings.size;
+    },
+    [data.settings.size]
+  );
 
-  const indexToX = (index) => {
-    return index % data.settings.size;
-  };
+  const indexToX = useCallback(
+    (index) => {
+      return index % data.settings.size;
+    },
+    [data.settings.size]
+  );
 
-  const indexToY = (index) => {
-    return Math.floor(index / data.settings.size);
-  };
+  const indexToY = useCallback(
+    (index) => {
+      return Math.floor(index / data.settings.size);
+    },
+    [data.settings.size]
+  );
 
   useEffect(() => {
     const handleResize = () => {
       setGridSize(Math.max(containerRef.current.clientHeight * 0.95, 200));
     };
     window.addEventListener('resize', handleResize);
+    handleResize();
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -145,17 +154,6 @@ const Grid = ({ data, setData }) => {
 
   useEffect(() => {
     //this is to setup the initial grid numbers and words state. TODO: refactor to not have repeated code (code is repeated on right click after grid changes.)
-    const xyToIndex = (x, y) => {
-      return x + y * data.settings.size;
-    };
-
-    const indexToX = (index) => {
-      return index % data.settings.size;
-    };
-
-    const indexToY = (index) => {
-      return Math.floor(index / data.settings.size);
-    };
     setData((prev) => {
       const localData = { ...prev };
       localData.grid = [];
@@ -169,7 +167,7 @@ const Grid = ({ data, setData }) => {
         }
       }
       //wipe words to rebuild.
-      localData.words = { ...localData.words, across: [], down: [] };
+      localData.words = { ...localData.words };
       for (let i = 0; i < localData.grid.length; i++) {
         if (localData.grid[i].content === '0') {
           //we don't ever add a clue number on a black cell.
@@ -198,7 +196,10 @@ const Grid = ({ data, setData }) => {
                 break;
               }
             }
-            localData.words.across = [...localData.words.across, across];
+            localData.words.across = [
+              ...localData.words.across,
+              { wordCells: across, clue: '' },
+            ];
           }
 
           let localY = y;
@@ -211,34 +212,22 @@ const Grid = ({ data, setData }) => {
                 break;
               }
             }
-            localData.words.down = [...localData.words.down, down];
+            localData.words.down = [
+              ...localData.words.down,
+              { wordCells: down, clue: '' },
+            ];
           }
         }
       }
       return localData;
     });
-  }, [setData, data.settings.size]);
-
-  useEffect(() => {
-    setGridSize(containerRef.current.clientHeight * 0.95);
-  }, [setGridSize]);
+  }, [setData, data.settings.size, indexToX, indexToY, xyToIndex]);
 
   useEffect(() => {
     setCellSize(gridSize / data.settings.size);
   }, [gridSize, data.settings.size]);
 
   useEffect(() => {
-    const xyToIndex = (x, y) => {
-      return x + y * data.settings.size;
-    };
-
-    const indexToX = (index) => {
-      return index % data.settings.size;
-    };
-
-    const indexToY = (index) => {
-      return Math.floor(index / data.settings.size);
-    };
     const getWordCells = (i) => {
       if (data.isWordHorizontal) {
         const x = indexToX(i);
@@ -324,6 +313,9 @@ const Grid = ({ data, setData }) => {
     data.grid,
     data.selectedCell,
     data.settings.size,
+    indexToX,
+    indexToY,
+    xyToIndex,
   ]);
 
   const handleClick = (e, button, index) => {
@@ -340,14 +332,14 @@ const Grid = ({ data, setData }) => {
         localData.selectedCell = index;
         if (localData.isWordHorizontal) {
           for (let i = 0; i < localData.words.across.length; i++) {
-            if (localData.words.across[i].includes(index)) {
+            if (localData.words.across[i].wordCells.includes(index)) {
               localData.selectedWord = i;
               break;
             }
           }
         } else {
           for (let i = 0; i < localData.words.down.length; i++) {
-            if (localData.words.down[i].includes(index)) {
+            if (localData.words.down[i].wordCells.includes(index)) {
               localData.selectedWord = i;
               break;
             }
@@ -363,9 +355,10 @@ const Grid = ({ data, setData }) => {
       setData((prev) => {
         //first we change clicked cell content to "0". that indicates the cell should be black.
         const localData = { ...prev };
+        const isCellBlack = localData.grid[index].content === '0';
         localData.grid = [...localData.grid];
         localData.grid[index] = { ...localData.grid[index] };
-        if (localData.grid[index].content === '0') {
+        if (isCellBlack) {
           localData.grid[index].content = '';
         } else {
           localData.grid[index].content = '0';
@@ -399,11 +392,10 @@ const Grid = ({ data, setData }) => {
             }
           }
         }
-
         //recalculate cell number to indicate which clue it is.
         let num = 1;
         //wipe words to rebuild.
-        localData.words = { ...localData.words, across: [], down: [] };
+        localData.words = { ...localData.words };
         for (let i = 0; i < localData.grid.length; i++) {
           //first we wipe every cell`s number and then recalculate.
           localData.grid[i] = { ...localData.grid[i], number: '' };
@@ -411,7 +403,6 @@ const Grid = ({ data, setData }) => {
             //we don't ever add a clue number on a black cell.
             continue;
           }
-
           const x = indexToX(i);
           const y = indexToY(i);
           const leftCellIndex = x > 0 ? xyToIndex(x - 1, y) : -1;
@@ -427,6 +418,13 @@ const Grid = ({ data, setData }) => {
             const down = [];
             let localX = x;
             if (x === 0 || localData.grid[leftCellIndex].content === '0') {
+              let clue = '';
+              const word = localData.words.across.find(
+                (e) => e.wordCells[0] === i
+              );
+              if (word !== undefined) {
+                clue = word.clue;
+              }
               //across word
               while (localData.grid[xyToIndex(localX, y)].content !== '0') {
                 across.push(xyToIndex(localX, y));
@@ -435,11 +433,21 @@ const Grid = ({ data, setData }) => {
                   break;
                 }
               }
-              localData.words.across = [...localData.words.across, across];
+              localData.words.across = [
+                ...localData.words.across,
+                { wordCells: across, clue: clue },
+              ];
             }
 
             let localY = y;
             if (y === 0 || localData.grid[upCellIndex].content === '0') {
+              let clue = '';
+              const word = localData.words.down.find(
+                (e) => e.wordCells[0] === i
+              );
+              if (word !== undefined) {
+                clue = word.clue;
+              }
               //down word
               while (localData.grid[xyToIndex(x, localY)].content !== '0') {
                 down.push(xyToIndex(x, localY));
@@ -448,7 +456,10 @@ const Grid = ({ data, setData }) => {
                   break;
                 }
               }
-              localData.words.down = [...localData.words.down, down];
+              localData.words.down = [
+                ...localData.words.down,
+                { wordCells: down, clue: clue },
+              ];
             }
             localData.grid[i] = { ...localData.grid[i], number: num++ };
           }
@@ -457,6 +468,69 @@ const Grid = ({ data, setData }) => {
       });
     }
   };
+
+  // const recalculateGrid = useCallback(
+  //   (localData, clickedIndex, symIndex, isCellBlack) => {
+  //     // const x = indexToX(clickedIndex); //changed line down
+  //     // const y = indexToY(clickedIndex); //changed line across
+  //     let changedLinesAcross = [
+  //       indexToY(clickedIndex),
+  //       indexToY(symIndex),
+  //     ].sort((a, b) => a - b);
+  //     //remove duplicate
+  //     changedLinesAcross = changedLinesAcross.filter(
+  //       (value, i) => changedLinesAcross.indexOf(value) === i
+  //     );
+  //     let changedLinesDown = [indexToX(clickedIndex), indexToX(symIndex)].sort(
+  //       (a, b) => a - b
+  //     );
+  //     //remove duplicate
+  //     changedLinesDown = changedLinesDown.filter(
+  //       (value, i) => changedLinesDown.indexOf(value) === i
+  //     );
+  //     let changedIndices = [];
+  //     let wordsToRemove = 0;
+  //     for (let word = 0; word < localData.words.across.length; word++) {
+  //       const firstCellIndex = localData.words.across[word][0];
+  //       let indexAdded = false;
+  //       for (let i = 0; i < changedLinesAcross.length; i++) {
+  //         if (indexToY(firstCellIndex) === changedLinesAcross[i]) {
+  //           wordsToRemove++;
+  //           if (!indexAdded) {
+  //             changedIndices.push(word);
+  //             indexAdded = true;
+  //           }
+  //         }
+  //       }
+  //     }
+  //     //words to remove per line.
+  //     wordsToRemove /= changedLinesAcross.length;
+  //     //backwards for loop so when we remove elements we don't disturb the position of any "to be changed" elements.
+  //     for (let i = changedIndices.length - 1; i >= 0; i--) {
+  //       const newLineWords = [];
+  //       let word = [];
+  //       for (let x = 0; x < localData.settings.size; x++) {
+  //         const currIndex = xyToIndex(x, changedLinesAcross[i]);
+  //         if (localData.grid[currIndex].content === '0') {
+  //           if (word.length > 0) {
+  //             newLineWords.push(word);
+  //           }
+  //           word = [];
+  //         } else {
+  //           word.push(currIndex);
+  //         }
+  //       }
+  //       localData.words.across.splice(
+  //         changedIndices[i],
+  //         wordsToRemove,
+  //         ...newLineWords
+  //       );
+  //     }
+
+  //     return localData;
+  //   },
+  //   [indexToX, indexToY, xyToIndex]
+  // );
 
   return (
     <Container

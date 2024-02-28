@@ -4,6 +4,7 @@ import React, { createContext, useState, useEffect } from 'react';
 import styled from 'styled-components';
 import ThemeSwitch from './ThemeSwitch';
 import Grid from './Grid';
+import Clues from './Clues';
 import { motion, AnimatePresence } from 'framer-motion';
 import Banner from './Banner';
 
@@ -191,9 +192,19 @@ const Main = () => {
                 </Button>
               </SetupWindow>
             ) : (
-              <div key="board" style={{ width: '100%', height: '100%' }}>
+              <div
+                key="board"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '5rem',
+                }}
+              >
                 <Grid data={data} setData={setData} />
-                {/* <Clues /> */}
+                <Clues data={data} setData={setData} />
               </div>
             )}
           </AnimatePresence>
