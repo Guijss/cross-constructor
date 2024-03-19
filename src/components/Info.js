@@ -20,7 +20,6 @@ const Modal = styled.div`
   right: -2px;
   border-radius: 10px;
   border: 2px solid #8d8776;
-  background-color: rgb(18, 19, 24);
   font-weight: bold;
 
   padding: 1rem;
@@ -38,7 +37,7 @@ const Info = ({ text }) => {
   return (
     <>
       {isHover && (
-        <Modal>
+        <Modal style={{ backgroundColor: theme.bgCol }}>
           <Text style={{ color: theme.textCol }}>{text}</Text>
         </Modal>
       )}
