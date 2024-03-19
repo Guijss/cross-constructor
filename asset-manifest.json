@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/cross-constructor/static/css/main.e6c13ad2.css",
-    "main.js": "/cross-constructor/static/js/main.969e3d75.js",
+    "main.js": "/cross-constructor/static/js/main.faad9270.js",
     "index.html": "/cross-constructor/index.html",
     "main.e6c13ad2.css.map": "/cross-constructor/static/css/main.e6c13ad2.css.map",
-    "main.969e3d75.js.map": "/cross-constructor/static/js/main.969e3d75.js.map"
+    "main.faad9270.js.map": "/cross-constructor/static/js/main.faad9270.js.map"
   },
   "entrypoints": [
     "static/css/main.e6c13ad2.css",
-    "static/js/main.969e3d75.js"
+    "static/js/main.faad9270.js"
   ]
 }
