@@ -41,7 +41,7 @@ const SetupWindow = styled(motion.div)`
   justify-content: center;
   align-items: center;
   gap: 20px;
-  font-size: 0.8rem;
+  font-size: 2rem;
   font-weight: bold;
   border-radius: 10px;
   padding: 50px;
@@ -57,7 +57,7 @@ const SetupItem = styled.div`
 `;
 
 const ItemSelect = styled.select`
-  font-size: 0.8rem;
+  font-size: 1.5rem;
   border-radius: 5px;
   cursor: pointer;
 `;
@@ -65,7 +65,8 @@ const ItemSelect = styled.select`
 const Button = styled.button`
   margin-top: 50px;
   width: 100%;
-  height: 1.5rem;
+  height: 3rem;
+  font-size: 2rem;
   border-radius: 5px;
   border: none;
   cursor: pointer;
@@ -104,7 +105,7 @@ const Main = () => {
     words: { across: [], down: [] },
     selectedWord: -1,
     isWordHorizontal: true,
-    ifGridOnFocus: true,
+    isGridOnFocus: true,
   });
 
   useEffect(() => {

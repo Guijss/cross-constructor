@@ -100,7 +100,7 @@ const Grid = ({ data, setData }) => {
       }
       setData((prev) => {
         const localData = { ...prev };
-        if (localData.selectedCell === -1 || !localData.ifGridOnFocus) {
+        if (localData.selectedCell === -1 || !localData.isGridOnFocus) {
           return localData;
         }
         if (e.keyCode === 32) {
@@ -174,6 +174,7 @@ const Grid = ({ data, setData }) => {
     setData((prev) => {
       const localData = { ...prev };
       localData.grid = [];
+      localData.words = { across: [], down: [] };
       let num = 1;
       for (let i = 0; i < localData.settings.size; i++) {
         for (let j = 0; j < localData.settings.size; j++) {

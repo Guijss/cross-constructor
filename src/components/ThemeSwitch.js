@@ -5,7 +5,7 @@ import { CiDark, CiLight } from 'react-icons/ci';
 
 const ThemeSwitchWrapper = styled.div`
   position: absolute;
-  right: 1rem;
+  right: 3rem;
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -15,8 +15,8 @@ const ThemeSwitchWrapper = styled.div`
 
 const ThemeSwitchbar = styled.div`
   position: relative;
-  width: 1.5rem;
-  height: 0.7rem;
+  width: 3rem;
+  height: 1rem;
   border-radius: 0.5rem;
   display: flex;
   justify-content: center;
@@ -26,8 +26,8 @@ const ThemeSwitchbar = styled.div`
 
 const ThemeSwitchKnob = styled.div`
   position: relative;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.9rem;
+  height: 0.9rem;
   border-radius: 50%;
   transition: all 0.2s ease;
   pointer-events: none;
@@ -37,7 +37,7 @@ const ThemeSwitch = ({ handleClick, isThemeDark }) => {
   const theme = useContext(ThemeContext);
   return (
     <ThemeSwitchWrapper>
-      <CiDark color={theme.textCol} />
+      <CiDark color={theme.textCol} size={30} />
       <ThemeSwitchbar
         style={{ backgroundColor: theme.textCol }}
         onClick={handleClick}
@@ -45,11 +45,11 @@ const ThemeSwitch = ({ handleClick, isThemeDark }) => {
         <ThemeSwitchKnob
           style={{
             backgroundColor: theme.cellCol,
-            translate: isThemeDark ? '-0.35rem' : '0.35rem',
+            translate: isThemeDark ? '-0.95rem' : '0.95rem',
           }}
         />
       </ThemeSwitchbar>
-      <CiLight color={theme.textCol} />
+      <CiLight color={theme.textCol} size={30} />
     </ThemeSwitchWrapper>
   );
 };

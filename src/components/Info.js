@@ -5,7 +5,7 @@ import styled from 'styled-components';
 
 const Container = styled.div`
   position: absolute;
-  right: -20px;
+  right: -30px;
   top: 0;
   cursor: pointer;
 `;
@@ -15,20 +15,20 @@ const Modal = styled.div`
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  width: 150px;
+  width: 200px;
   top: -2px;
   right: -2px;
   border-radius: 10px;
   border: 2px solid #8d8776;
   background-color: rgb(18, 19, 24);
   font-weight: bold;
-  line-height: 50%;
-  padding: 0.7rem;
-  z-index: 10;
+
+  padding: 1rem;
+  z-index: 99;
 `;
 
 const Text = styled.span`
-  font-size: 0.5rem;
+  font-size: 1rem;
   white-space: pre-line;
 `;
 
@@ -47,7 +47,7 @@ const Info = ({ text }) => {
         onMouseOver={() => setIsHover(true)}
         onMouseOut={() => setIsHover(false)}
       >
-        <FaInfoCircle size={14} />
+        <FaInfoCircle size={25} />
       </Container>
     </>
   );

@@ -4,7 +4,7 @@ import { useContext } from 'react';
 
 const Frame = styled.div`
   position: absolute;
-  z-index: 99;
+  z-index: 10;
   pointer-events: none;
   box-sizing: border-box;
 `;

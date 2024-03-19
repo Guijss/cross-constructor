@@ -27,7 +27,7 @@ const List = styled.div`
 `;
 
 const Title = styled.div`
-  font-size: 1rem;
+  font-size: 2rem;
   font-weight: bold;
 `;
 
@@ -41,6 +41,7 @@ const Item = styled.div`
 const ItemNumber = styled.div`
   width: 18%;
   height: 100%;
+  font-size: 1.5rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -48,7 +49,7 @@ const ItemNumber = styled.div`
 
 const ItemText = styled.textarea`
   width: 82%;
-
+  font-size: 1rem;
   background-color: transparent;
   border: none;
   resize: none;
@@ -77,13 +78,13 @@ const Clues = ({ data, setData }) => {
       newData.selectedCell = newData.words.down[i].wordCells[0];
       newData.isWordHorizontal = false;
     }
-    newData.ifGridOnFocus = false;
+    newData.isGridOnFocus = false;
     setData(newData);
   };
 
   const handleTextBlur = () => {
     const newData = { ...data };
-    newData.ifGridOnFocus = true;
+    newData.isGridOnFocus = true;
     setData(newData);
   };
 
