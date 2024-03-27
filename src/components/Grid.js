@@ -30,7 +30,6 @@ const Cell = styled.div`
 
 const CellNum = styled.div`
   position: absolute;
-  font-size: 8px;
   font-weight: bold;
   top: 1px;
   left: 1px;
@@ -481,117 +480,6 @@ const Grid = ({ data, setData }) => {
         }
       }
       setData(newData);
-      // setData((prev) => {
-      // //first we change clicked cell content to "0". that indicates the cell should be black.
-      // const localData = { ...prev };
-      // const isCellBlack = localData.grid[index].content === '0';
-      // localData.grid = [...localData.grid];
-      // localData.grid[index] = { ...localData.grid[index] };
-      // if (isCellBlack) {
-      //   localData.grid[index].content = '';
-      // } else {
-      //   localData.grid[index].content = '0';
-      //   if (localData.selectedCell === index) {
-      //     localData.selectedCell = -1;
-      //   }
-      // }
-      // //now we change equivalent cell to "0" according to symmetry option.
-      // let symIndex = -1;
-      // if (localData.settings.symmetry === 'rotational') {
-      //   const x = indexToX(index);
-      //   const y = indexToY(index);
-      //   const symX = localData.settings.size - 1 - x;
-      //   const symY = localData.settings.size - 1 - y;
-      //   symIndex = xyToIndex(symX, symY);
-      // } else if (localData.settings.symmetry === 'mirrored') {
-      //   const x = indexToX(index);
-      //   const y = indexToY(index);
-      //   const symX = localData.settings.size - 1 - x;
-      //   symIndex = xyToIndex(symX, y);
-      // }
-      // if (symIndex !== index && symIndex !== -1) {
-      //   //only change if it's not the same as clicked cell and the symmetry is set to NOT "none".
-      //   localData.grid[symIndex] = { ...localData.grid[symIndex] };
-      //   if (localData.grid[symIndex].content === '0') {
-      //     localData.grid[symIndex].content = '';
-      //   } else {
-      //     localData.grid[symIndex].content = '0';
-      //     if (localData.selectedCell === symIndex) {
-      //       localData.selectedCell = -1;
-      //     }
-      //   }
-      // }
-      // //recalculate cell number to indicate which clue it is.
-      // let num = 1;
-      // //wipe words to rebuild.
-      // const previousAcross = [...localData.words.across];
-      // const previousDown = [...localData.words.down];
-      // localData.words = { ...localData.words, across: [], down: [] };
-      // for (let i = 0; i < localData.grid.length; i++) {
-      //   //first we wipe every cell`s number and then recalculate.
-      //   localData.grid[i] = { ...localData.grid[i], number: '' };
-      //   if (localData.grid[i].content === '0') {
-      //     //we don't ever add a clue number on a black cell.
-      //     continue;
-      //   }
-      //   const x = indexToX(i);
-      //   const y = indexToY(i);
-      //   const leftCellIndex = x > 0 ? xyToIndex(x - 1, y) : -1;
-      //   const upCellIndex = y > 0 ? xyToIndex(x, y - 1) : -1;
-      //   if (
-      //     x === 0 ||
-      //     y === 0 ||
-      //     localData.grid[leftCellIndex].content === '0' ||
-      //     localData.grid[upCellIndex].content === '0'
-      //   ) {
-      //     //first column, first row or after a black square.
-      //     const across = [];
-      //     const down = [];
-      //     let localX = x;
-      //     if (x === 0 || localData.grid[leftCellIndex].content === '0') {
-      //       let clue = '';
-      //       const word = previousAcross.find((e) => e.wordCells[0] === i);
-      //       if (word !== undefined) {
-      //         clue = word.clue;
-      //       }
-      //       //across word
-      //       while (localData.grid[xyToIndex(localX, y)].content !== '0') {
-      //         across.push(xyToIndex(localX, y));
-      //         localX++;
-      //         if (localX >= localData.settings.size) {
-      //           break;
-      //         }
-      //       }
-      //       localData.words.across = [
-      //         ...localData.words.across,
-      //         { wordCells: across, clue: clue },
-      //       ];
-      //     }
-      //     let localY = y;
-      //     if (y === 0 || localData.grid[upCellIndex].content === '0') {
-      //       let clue = '';
-      //       const word = previousDown.find((e) => e.wordCells[0] === i);
-      //       if (word !== undefined) {
-      //         clue = word.clue;
-      //       }
-      //       //down word
-      //       while (localData.grid[xyToIndex(x, localY)].content !== '0') {
-      //         down.push(xyToIndex(x, localY));
-      //         localY++;
-      //         if (localY >= localData.settings.size) {
-      //           break;
-      //         }
-      //       }
-      //       localData.words.down = [
-      //         ...localData.words.down,
-      //         { wordCells: down, clue: clue },
-      //       ];
-      //     }
-      //     localData.grid[i] = { ...localData.grid[i], number: num++ };
-      //   }
-      // }
-      // return localData;
-      // });
     }
   };
 
@@ -633,7 +521,7 @@ const Grid = ({ data, setData }) => {
             <CellNum style={{ fontSize: cellSize * 0.2 }}>
               {cell.number}
             </CellNum>
-            <div style={{ fontSize: cellSize - 5 }}>
+            <div style={{ fontSize: cellSize * 0.6 }}>
               {cell.content !== '0' && cell.content}
             </div>
           </Cell>
